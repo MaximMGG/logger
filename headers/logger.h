@@ -2,17 +2,13 @@
 #define _LOGGER_
 #include "loginstrument.h"
 
-enum log_level {
-    TRACE, 
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
-    FATAL
-};
-
 //if configure not NULL, check file witch name log.conf, output can by 0
-void logger_init(char *configure, int output);
+void logger_init(char prioritet_log_level, 
+                int output, 
+                int max_file_length,
+                char *file_name,
+                char *path,
+                bool time);
 
 //TODO here will be more interesting!
 void configure();
