@@ -12,9 +12,9 @@ typedef enum log_level_e {
 }log_level;
 
 typedef enum log_output_e {
-    CONSOLE = 0x0001,
-    FILE = 0x0002,
-    HTTP = 0x0004
+    LOG_CONSOLE = 0x0001,
+    LOG_FILE = 0x0002,
+    LOG_HTTP = 0x0004
 } log_output;
 
 typedef struct logger_s {
