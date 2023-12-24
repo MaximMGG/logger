@@ -27,6 +27,7 @@ typedef struct logger_s {
      
     
     char *http_response; //do not functional
+    char current_file[128];
 } logger;
 
 
