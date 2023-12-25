@@ -6,8 +6,10 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <dirent.h>
+#include <threads.h>
 
 static logger LOG;
+// static thrd_t *thread;
 
 char *getcurrenttime() {
     time_t t;
@@ -33,6 +35,7 @@ void createfile() {
     closedir(dir);
 
     char full_path[256];
+    memset(full_path, 0, 256);
 
     strcat(full_path, LOG.path);
     strcat(full_path, buf);
@@ -47,6 +50,7 @@ void createfile() {
     free(current_time);
     fclose(f);
 }
+
 
 void logger_init(char prioritet_log_level, 
                 int output, 
@@ -108,15 +112,18 @@ int checkfile() {
     return 0;
 }
 
-void do_log(log_level l, char *msg) {
-    if (l >= LOG.prioritet_log_level) {
+log_level log_level_l;
+char *msg_l;
+
+int do_log_thrd(void *ptr) {
+    if (log_level_l >= LOG.prioritet_log_level) {
         checkfile();
-        char *level = cvtlogtochar(l);
+        char *level = cvtlogtochar(log_level_l);
         char *time = getcurrenttime();
         char tmp[] = "%s: %s %s\n";
         char buf[128];
         memset(buf, 0, 128);
-        snprintf(buf, 128, tmp, level, msg, time);
+        snprintf(buf, 128, tmp, level, msg_l, time);
 
         FILE *f = fopen(LOG.file_name, "a");
         if (f == NULL) {
@@ -125,4 +132,12 @@ void do_log(log_level l, char *msg) {
         fputs(buf, f);
         fclose(f);
     }
+    return 0;
+}
+
+void do_log(log_level l, char *msg) {
+    log_level_l = l;
+    msg_l = msg;
+    thrd_t thread;
+    thrd_create(&thread, &do_log_thrd, NULL);
 }
