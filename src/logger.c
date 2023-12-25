@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <dirent.h>
 
 static logger LOG;
 
@@ -23,9 +24,21 @@ void createfile() {
     char fmt[] = "%s->%s.log";
     char *current_time = getcurrenttime();
     snprintf(buf, 128, fmt, LOG.file_name, current_time);
-    strcpy(LOG.file_name, buf);
 
-    FILE *f = fopen(buf, "w");
+    
+    DIR *dir = opendir(LOG.path);
+    if (dir == NULL) {
+        mkdir(LOG.path, ACCESSPERMS);
+    }
+    closedir(dir);
+
+    char full_path[256];
+
+    strcat(full_path, LOG.path);
+    strcat(full_path, buf);
+
+    strcpy(LOG.file_name, full_path);
+    FILE *f = fopen(full_path, "w");
 
     if (f == NULL) {
         fprintf(stderr, "Cannot create new log file");
@@ -53,9 +66,8 @@ void logger_init(char prioritet_log_level,
         strcpy(LOG.path, path);
     }
     memset(LOG.current_file, 0, 128);
+    createfile();
 };
-
-void configure();
 
 char *cvtlogtochar(log_level l) {
     char *buf = malloc(sizeof(char) * 10);
@@ -101,7 +113,7 @@ void do_log(log_level l, char *msg) {
         checkfile();
         char *level = cvtlogtochar(l);
         char *time = getcurrenttime();
-        char tmp[] = "%s: %s %s";
+        char tmp[] = "%s: %s %s\n";
         char buf[128];
         memset(buf, 0, 128);
         snprintf(buf, 128, tmp, level, msg, time);
