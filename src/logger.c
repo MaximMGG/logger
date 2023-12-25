@@ -9,6 +9,8 @@
 #include <threads.h>
 
 static logger LOG;
+static mtx_t *mutex;
+static thrd_t worker;
 // static thrd_t *thread;
 
 char *getcurrenttime() {
@@ -20,6 +22,8 @@ char *getcurrenttime() {
 
     return tmp;
 }
+
+
 
 void createfile() {
     char buf[128];
@@ -132,6 +136,7 @@ int do_log_thrd(void *ptr) {
         fputs(buf, f);
         fclose(f);
     }
+    thrd_exit(0);
     return 0;
 }
 
