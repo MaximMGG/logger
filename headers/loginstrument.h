@@ -3,12 +3,12 @@
 #include <stdbool.h>
 
 typedef enum log_level_e {
-    TRACE, 
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
-    FATAL
+    L_TRACE, 
+    L_DEBUG,
+    L_INFO,
+    L_WARN,
+    L_ERROR,
+    L_FATAL
 }log_level;
 
 typedef enum log_output_e {

@@ -12,14 +12,17 @@ char *getcurrenttime() {
     time_t t;
     t = time(&t);
     struct tm *tm = localtime(&t);
+    char *tmp = malloc(128);
+    strftime(tmp, 128, "%G:%m:%d-%H:%M:%S", tm);
 
-    return asctime(tm);
+    return tmp;
 }
 
 void createfile() {
     char buf[128];
-    char fmt[] = "%s %s.log";
-    snprintf(buf, 128L, fmt, LOG.file_name, getcurrenttime());
+    char fmt[] = "%s->%s.log";
+    char *current_time = getcurrenttime();
+    snprintf(buf, 128, fmt, LOG.file_name, current_time);
     strcpy(LOG.file_name, buf);
 
     FILE *f = fopen(buf, "w");
@@ -28,6 +31,7 @@ void createfile() {
         fprintf(stderr, "Cannot create new log file");
     }
     
+    free(current_time);
     fclose(f);
 }
 
@@ -57,22 +61,22 @@ char *cvtlogtochar(log_level l) {
     char *buf = malloc(sizeof(char) * 10);
 
     switch(l) {
-        case TRACE:
+        case L_TRACE:
             strcpy(buf, "TRACE");
             break;
-        case DEBUG: 
+        case L_DEBUG: 
             strcpy(buf, "DEBUG");
             break;
-        case INFO:
+        case L_INFO:
             strcpy(buf, "INFO");
             break;
-        case WARN:
+        case L_WARN:
             strcpy(buf, "WARN");
             break;
-        case ERROR:
+        case L_ERROR:
             strcpy(buf, "ERROR");
             break;
-        case FATAL:
+        case L_FATAL:
             strcpy(buf, "FATAL");
             break;
     }
@@ -92,7 +96,7 @@ int checkfile() {
     return 0;
 }
 
-void log(log_level l, char *msg) {
+void do_log(log_level l, char *msg) {
     if (l >= LOG.prioritet_log_level) {
         checkfile();
         char *level = cvtlogtochar(l);
@@ -102,7 +106,7 @@ void log(log_level l, char *msg) {
         memset(buf, 0, 128);
         snprintf(buf, 128, tmp, level, msg, time);
 
-        FILE *f = fopen(LOG.file_name, "w");
+        FILE *f = fopen(LOG.file_name, "a");
         if (f == NULL) {
             fprintf(stderr, "Can't open file %s\n", LOG.file_name);
         }

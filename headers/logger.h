@@ -10,10 +10,7 @@ void logger_init(char prioritet_log_level,
                 char *path,
                 bool time);
 
-//TODO here will be more interesting!
-void configure();
-
-void log(log_level l, char *msg);
+void do_log(log_level l, char *msg);
 
 
 
