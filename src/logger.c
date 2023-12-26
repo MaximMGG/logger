@@ -7,13 +7,19 @@
 #include <time.h>
 #include <dirent.h>
 #include <threads.h>
+#include <util/util.h>
 
 #define try(a) if ((a) == NULL || (a) < 0) fprintf(stderr, "%s error\n", # a)
 
 static logger LOG;
 static mtx_t *mutex;
 static thrd_t worker;
-// static thrd_t *thread;
+
+boolean work = false;
+
+static Queue *q;
+
+void create_worker();
 
 char *getcurrenttime() {
     time_t t;
@@ -78,6 +84,9 @@ void logger_init(char prioritet_log_level,
     }
     memset(LOG.current_file, 0, 128);
     createfile();
+    q = queue_create();
+    create_worker();
+    work = true;
 };
 
 char *cvtlogtochar(log_level l) {
@@ -119,33 +128,54 @@ int checkfile() {
     return 0;
 }
 
-log_level log_level_l;
-char *msg_l;
-
 int do_log_thrd(void *ptr) {
-    if (log_level_l >= LOG.prioritet_log_level) {
-        checkfile();
-        char *level = cvtlogtochar(log_level_l);
-        char *time = getcurrenttime();
-        char tmp[] = "%s: %s %s\n";
-        char buf[128];
-        memset(buf, 0, 128);
-        snprintf(buf, 128, tmp, level, msg_l, time);
 
-        FILE *f = fopen(LOG.file_name, "a");
-        if (f == NULL) {
-            fprintf(stderr, "Can't open file %s\n", LOG.file_name);
+    while (work) {
+        while(get_size(q) > 0) {
+            struct log_msg *msg = (struct log_msg *)queue_get(q);
+            if (msg->l >= LOG.prioritet_log_level) {
+                checkfile();
+                char *level = cvtlogtochar(msg->l);
+                char *time = getcurrenttime();
+                char tmp[] = "%s: %s %s\n";
+                char buf[128];
+                memset(buf, 0, 128);
+                snprintf(buf, 128, tmp, level, msg->msg, time);
+
+                FILE *f = fopen(LOG.file_name, "a");
+                if (f == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", LOG.file_name);
+                }
+                fputs(buf, f);
+                fclose(f);
+
+                free(level);
+                free(time);
+                free(msg);
+            }
         }
-        fputs(buf, f);
-        fclose(f);
     }
-    thrd_exit(0);
+
     return 0;
 }
 
+
+void create_worker() {
+    thrd_create(&worker, &do_log_thrd, NULL);
+}
+
+
 void do_log(log_level l, char *msg) {
-    log_level_l = l;
-    msg_l = msg;
-    thrd_t thread;
-    thrd_create(&thread, &do_log_thrd, NULL);
+    struct log_msg *log_msg = malloc(sizeof(*msg));
+    log_msg->msg = msg;
+    log_msg->l = l;
+    queue_add(q, (void *) log_msg);
+}
+
+
+
+void logger_close() {
+    mtx_destroy(mutex);
+    work = false;
+    tryi(thrd_detach(worker));
 }

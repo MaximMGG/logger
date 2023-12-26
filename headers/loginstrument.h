@@ -17,6 +17,12 @@ typedef enum log_output_e {
     LOG_HTTP = 0x0004
 } log_output;
 
+//struct for threds queue
+struct log_msg {
+    char *msg;
+    log_level l;
+};
+
 typedef struct logger_s {
     char prioritet_log_level;
     int output; 

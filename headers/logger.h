@@ -13,6 +13,8 @@ void logger_init(char prioritet_log_level,
 void do_log(log_level l, char *msg);
 
 
+void logger_close();
+
 
 
 
