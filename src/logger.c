@@ -8,6 +8,8 @@
 #include <dirent.h>
 #include <threads.h>
 
+#define try(a) if ((a) == NULL || (a) < 0) fprintf(stderr, "%s error\n", # a)
+
 static logger LOG;
 static mtx_t *mutex;
 static thrd_t worker;
@@ -27,10 +29,10 @@ char *getcurrenttime() {
 
 void createfile() {
     char buf[128];
-    char fmt[] = "%s->%s.log";
     char *current_time = getcurrenttime();
-    snprintf(buf, 128, fmt, LOG.file_name, current_time);
+    char fmt[] = "%s->%s.log";
 
+    snprintf(buf, 128, fmt, LOG.file_name, current_time);
     
     DIR *dir = opendir(LOG.path);
     if (dir == NULL) {
@@ -45,6 +47,7 @@ void createfile() {
     strcat(full_path, buf);
 
     strcpy(LOG.file_name, full_path);
+
     FILE *f = fopen(full_path, "w");
 
     if (f == NULL) {
