@@ -4,5 +4,6 @@
 
 void worker_init(logger *l);
 void worker_put(struct log_msg *msg);
+void worker_free();
 
 #endif // _WORKER_H_

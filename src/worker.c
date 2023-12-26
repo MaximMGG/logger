@@ -145,4 +145,7 @@ void worker_put(void *m) {
     thrd_create(&worker, &logging, NULL);
 }
 
+void worker_free() {
+    free(q);
+}
 

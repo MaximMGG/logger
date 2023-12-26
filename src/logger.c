@@ -30,4 +30,7 @@ void do_log(log_level l, char *msg) {
     worker_put(m);
 }
 
-void logger_close();
+void logger_close() {
+    worker_free();
+
+}
