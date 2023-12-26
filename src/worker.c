@@ -1,5 +1,9 @@
 #include <threads.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
 #include <util/util.h>
 #include "../headers/logger.h"
 
@@ -9,27 +13,88 @@ logger *w_log;
 boolean job = true;
 
 char *cvt_level_to_char(log_level l) {
-
-    return NULL;
+    char *level = malloc(sizeof(char) * 10);
+    switch(l) {
+        case L_TRACE:
+            strcpy(level, "TRACE");
+            break;
+        case L_INFO:
+            strcpy(level, "INFO");
+            break;
+        case L_WARN:
+            strcpy(level, "WARN");
+            break;
+        case L_DEBUG:
+            strcpy(level, "DEBUG");
+            break;
+        case L_ERROR:
+            strcpy(level, "ERROR");
+            break;
+        case L_FATAL:
+            strcpy(level, "FATAL");
+            break;
+    }
+    return level;
 }
 
 char *get_current_time() {
+    time_t t;
+    t = time(&t);
+    struct tm *tm;
+    tm = localtime(&t);
 
-    return NULL;
+    char *localtime = malloc(64);
+
+    strftime(localtime, 64, "%G:%m:%d-%H:%M:%S", tm);
+
+    return localtime;
 }
 
 void worker_create_file() {
     puts("worker_create_file worker");
+    char full_path[128];
+    memset(full_path, 0, 128);
+    strcat(full_path, w_log->path);
+    strcat(full_path, w_log->file_name);
 
+    strcpy(w_log->current_file, full_path);
+
+    DIR *dir = opendir(w_log->path);
+    if (dir == NULL) {
+        mkdir(w_log->path, ACCESSPERMS);
+    }
+    closedir(dir);
+
+    FILE *f = fopen(w_log->current_file, "w");
+    tryp(f);
+    fclose(f);
+}
+
+void check_file() {
+    struct stat *st;
+    stat(w_log->current_file, st);
+    long f_size = st->st_size;
+
+    if ((f_size / 1024) > w_log->max_file_length) {
+        worker_create_file();
+    }
 }
 
 void worker_log_file(char *msg) {
-
     puts("worker_log_file worker");
+
+    FILE *f = fopen(w_log->current_file, "a");
+    tryp(f);
+
+    fputs(msg, f);
+
+    fclose(f);
+    check_file();
 }
 
 void worker_log_console(char *msg) {
     puts("worker_log_console worker");
+    printf("%s\n", msg);
 }
 
 char *concat_msg(char *time, char *level, char *msg) {
@@ -55,7 +120,6 @@ int logging(void *ptr) {
             }
             if (w_log->output & LOG_CONSOLE) {
                 worker_log_console(final_msg);
-
             }
             free(current_time);
             free(level);
@@ -72,10 +136,6 @@ void worker_init(logger *l) {
     puts("Worker init worker");
     q = queue_create();
     worker_create_file();
-
-
-
-
 
     thrd_create(&worker, &logging, NULL);
     w_log = l;
