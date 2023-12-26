@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <threads.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -12,6 +13,7 @@ Queue *q;
 logger *w_log;
 boolean job = true;
 mtx_t mt;
+int file_count = 0;
 
 char *cvt_level_to_char(log_level l) {
     char *level = malloc(sizeof(char) * 10);
@@ -55,12 +57,8 @@ void worker_create_file() {
     puts("worker_create_file worker");
     char full_path[128];
     memset(full_path, 0, 128);
-    strcat(full_path, w_log->path);
-    strcat(full_path, w_log->file_name);
     char *time = get_current_time();
-    strcat(full_path, "->");
-    strcat(full_path, time);
-    strcat(full_path, ".log");
+    snprintf(full_path, 128, "%s%s%s%s%d%s", w_log->path, w_log->file_name, "->", time, file_count++, ".log");
 
     strcpy(w_log->current_file, full_path);
 
@@ -111,6 +109,7 @@ char *concat_msg(char *time, char *level, char *msg) {
 }
 
 int logging(void *ptr) {
+    mtx_lock(&mt);
 
     while(job) {
         while(get_size(q) > 0) {
@@ -131,7 +130,7 @@ int logging(void *ptr) {
             free(lm);
         }
     }
-    thrd_exit(0);
+    mtx_unlock(&mt);
     return 0;
 }
 
