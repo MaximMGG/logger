@@ -9,17 +9,15 @@
 #include <threads.h>
 #include <util/util.h>
 
-#define try(a) if ((a) == NULL || (a) < 0) fprintf(stderr, "%s error\n", # a)
-
 static logger LOG;
-static mtx_t *mutex;
-static thrd_t worker;
-
-boolean work = false;
+thrd_t worker;
+boolean work = true;
 
 static Queue *q;
 
+
 void create_worker();
+int do_log_thrd(void *ptr);
 
 char *getcurrenttime() {
     time_t t;
@@ -85,8 +83,7 @@ void logger_init(char prioritet_log_level,
     memset(LOG.current_file, 0, 128);
     createfile();
     q = queue_create();
-    create_worker();
-    work = true;
+    thrd_create(&worker, &do_log_thrd, NULL);
 };
 
 char *cvtlogtochar(log_level l) {
@@ -129,7 +126,6 @@ int checkfile() {
 }
 
 int do_log_thrd(void *ptr) {
-
     while (work) {
         while(get_size(q) > 0) {
             struct log_msg *msg = (struct log_msg *)queue_get(q);
@@ -160,11 +156,6 @@ int do_log_thrd(void *ptr) {
 }
 
 
-void create_worker() {
-    thrd_create(&worker, &do_log_thrd, NULL);
-}
-
-
 void do_log(log_level l, char *msg) {
     struct log_msg *log_msg = malloc(sizeof(*msg));
     log_msg->msg = msg;
@@ -175,7 +166,6 @@ void do_log(log_level l, char *msg) {
 
 
 void logger_close() {
-    mtx_destroy(mutex);
     work = false;
     tryi(thrd_detach(worker));
 }

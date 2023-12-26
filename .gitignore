@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
 /test
+logger
 
 # Object files
 *.o

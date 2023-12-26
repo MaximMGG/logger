@@ -1,6 +1,7 @@
 #ifndef _LOGGER_
 #define _LOGGER_
 #include "loginstrument.h"
+#include <util/util.h>
 
 //if configure not NULL, check file witch name log.conf, output can by 0
 void logger_init(char prioritet_log_level, 
