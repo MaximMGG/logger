@@ -11,6 +11,7 @@ thrd_t worker;
 Queue *q;
 logger *w_log;
 boolean job = true;
+mtx_t mt;
 
 char *cvt_level_to_char(log_level l) {
     char *level = malloc(sizeof(char) * 10);
@@ -56,6 +57,10 @@ void worker_create_file() {
     memset(full_path, 0, 128);
     strcat(full_path, w_log->path);
     strcat(full_path, w_log->file_name);
+    char *time = get_current_time();
+    strcat(full_path, "->");
+    strcat(full_path, time);
+    strcat(full_path, ".log");
 
     strcpy(w_log->current_file, full_path);
 
@@ -68,12 +73,13 @@ void worker_create_file() {
     FILE *f = fopen(w_log->current_file, "w");
     tryp(f);
     fclose(f);
+    free(time);
 }
 
 void check_file() {
-    struct stat *st;
-    stat(w_log->current_file, st);
-    long f_size = st->st_size;
+    struct stat st;
+    stat(w_log->current_file, &st);
+    long f_size = st.st_size;
 
     if ((f_size / 1024) > w_log->max_file_length) {
         worker_create_file();
@@ -81,19 +87,18 @@ void check_file() {
 }
 
 void worker_log_file(char *msg) {
-    puts("worker_log_file worker");
 
     FILE *f = fopen(w_log->current_file, "a");
     tryp(f);
 
     fputs(msg, f);
+    fputs("\n", f);
 
     fclose(f);
     check_file();
 }
 
 void worker_log_console(char *msg) {
-    puts("worker_log_console worker");
     printf("%s\n", msg);
 }
 
@@ -106,7 +111,6 @@ char *concat_msg(char *time, char *level, char *msg) {
 }
 
 int logging(void *ptr) {
-    printf("Start logging worker");
 
     while(job) {
         while(get_size(q) > 0) {
@@ -127,23 +131,19 @@ int logging(void *ptr) {
             free(lm);
         }
     }
-
-
+    thrd_exit(0);
     return 0;
 }
 
 void worker_init(logger *l) {
-    puts("Worker init worker");
+    w_log = l;
     q = queue_create();
     worker_create_file();
-
-    thrd_create(&worker, &logging, NULL);
-    w_log = l;
 }
 
 void worker_put(void *m) {
-    puts("worker_put");
     queue_add(q, m);
+    thrd_create(&worker, &logging, NULL);
 }
 
 

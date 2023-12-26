@@ -1,5 +1,5 @@
 #include "../headers/logger.h"
-#include "worker.c"
+#include "../headers/worker.h"
 #include <string.h>
 
 
@@ -20,17 +20,14 @@ void logger_init(char prioritet_log_level,
     strcpy(LOG.file_name, file_name);
     LOG.time_on = time_on;
     worker_init(&LOG);
-    puts("worker_init main");
 }
 
 void do_log(log_level l, char *msg) {
-    puts("do_log main");
     struct log_msg *m = (struct log_msg *)malloc(sizeof(*m));
 
     m->msg = msg;
     m->l = l;
     worker_put(m);
 }
-
 
 void logger_close();
